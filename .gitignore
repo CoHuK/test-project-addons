@@ -1,6 +1,9 @@
 .vscode/
 .gradle/
-target/
-bin/
-build/
-src/main/resources/
+tp2fa/target/
+tp2fa/bin/
+tp2fa/build/
+tp2fa/src/main/resources/
+tp2fa/.classpath
+tp2fa/.project
+tp2fa/.settings/
