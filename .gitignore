@@ -1,0 +1,6 @@
+.vscode/
+.gradle/
+target/
+bin/
+build/
+src/main/resources/
