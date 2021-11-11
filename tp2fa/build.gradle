@@ -1,5 +1,5 @@
 group 'qa.strongin.testproject.addons.tp2fa'
-version '1.4'
+version '1.5'
 
 apply plugin: 'java'
 

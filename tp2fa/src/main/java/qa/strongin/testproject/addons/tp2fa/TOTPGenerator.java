@@ -25,6 +25,7 @@ public class TOTPGenerator implements WebElementAction {
     public String totp_code;
 
     public ExecutionResult execute(WebAddonHelper helper, WebElement element) throws FailureException {
+        element = helper.getDriver().findElement(helper.getSearchCriteria());
 
         TimeProvider timeProvider = new SystemTimeProvider();
         CodeGenerator codeGenerator = new DefaultCodeGenerator();
@@ -36,7 +37,7 @@ public class TOTPGenerator implements WebElementAction {
             throw new FailureException("Failed to generate TOTP code");
         }
         helper.getReporter().result("Generated OTP is: " + totp_code);
-        element = helper.getDriver().findElement(helper.getSearchCriteria());
+        
         element.sendKeys(totp_code);
 
         return ExecutionResult.PASSED;
