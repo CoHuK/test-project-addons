@@ -45,11 +45,9 @@ public class CaptchaBypasser implements WebElementAction {
         DEFAULT_TIMEOUT = driver.getTimeout();
 
         // Start re-captcha challenge
-        element = driver.findElement(helper.getSearchCriteria());
-        element.click();
+        driver.findElement(helper.getSearchCriteria()).click();
 
         List<WebElement> iframes = driver.findElementsByTagName("iframe");
-
         driver.setTimeout(TIMEOUT);
         for (WebElement iframe: iframes){
             driver.switchTo().defaultContent();

@@ -22,23 +22,23 @@ public class TOTPGenerator implements WebElementAction {
     public String secret;
 
     @Parameter(direction = ParameterDirection.OUTPUT)
-    public String totp_code;
+    public String totpCode;
 
     public ExecutionResult execute(WebAddonHelper helper, WebElement element) throws FailureException {
         element = helper.getDriver().findElement(helper.getSearchCriteria());
 
         TimeProvider timeProvider = new SystemTimeProvider();
         CodeGenerator codeGenerator = new DefaultCodeGenerator();
-        totp_code = "Failed to generate code";
+        totpCode = "Failed to generate code";
         long currentBucket = Math.floorDiv(timeProvider.getTime(), 30);
         try {
-            totp_code = codeGenerator.generate(secret, currentBucket);
+            totpCode = codeGenerator.generate(secret, currentBucket);
         } catch (Exception e) {
             throw new FailureException("Failed to generate TOTP code");
         }
-        helper.getReporter().result("Generated OTP is: " + totp_code);
+        helper.getReporter().result("Generated OTP is: " + totpCode);
         
-        element.sendKeys(totp_code);
+        element.sendKeys(totpCode);
 
         return ExecutionResult.PASSED;
     }
