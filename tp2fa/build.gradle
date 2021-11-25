@@ -45,7 +45,7 @@ jar {
 }
 
 dependencies {
-    tpsdk files("${TP_SDK}")
-    //compile fileTree(dir: 'libs', include: ['*.jar'])
+    //tpsdk files("${TP_SDK}")
+    tpsdk fileTree(dir: 'libs', include: ['*.jar'])
     compile group: 'dev.samstevens.totp', name: 'totp', version: '1.7.1'
 }

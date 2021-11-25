@@ -6,14 +6,18 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import com.ibm.cloud.sdk.core.http.Response;
-import com.ibm.cloud.sdk.core.http.ServiceCall;
-import com.ibm.cloud.sdk.core.security.IamAuthenticator;
-import com.ibm.watson.speech_to_text.v1.SpeechToText;
-import com.ibm.watson.speech_to_text.v1.model.RecognizeOptions;
-import com.ibm.watson.speech_to_text.v1.model.SpeechRecognitionResults;
+// import com.ibm.cloud.sdk.core.http.Response;
+// import com.ibm.cloud.sdk.core.http.ServiceCall;
+// import com.ibm.cloud.sdk.core.security.IamAuthenticator;
+// import com.ibm.watson.speech_to_text.v1.SpeechToText;
+// import com.ibm.watson.speech_to_text.v1.model.RecognizeOptions;
+// import com.ibm.watson.speech_to_text.v1.model.SpeechRecognitionResults;
 
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
@@ -45,7 +49,9 @@ public class CaptchaBypasser implements WebElementAction {
         DEFAULT_TIMEOUT = driver.getTimeout();
 
         // Start re-captcha challenge
+        sleep(2);
         driver.findElement(helper.getSearchCriteria()).click();
+        sleep(2);
 
         List<WebElement> iframes = driver.findElementsByTagName("iframe");
         driver.setTimeout(TIMEOUT);
@@ -76,6 +82,7 @@ public class CaptchaBypasser implements WebElementAction {
                 audioButton.click();
                 audioButtonExists = true;
                 challengeIframe = iframe;
+                sleep(2);
             }
             catch (Exception e){
                 continue;
@@ -86,7 +93,8 @@ public class CaptchaBypasser implements WebElementAction {
                 try{
                     // Try to parse audio to text
                     String sourceURL = driver.findElementById("audio-source").getAttribute("src");
-                    String parsedAudio = audioToText(sourceURL);
+                    // String parsedAudio = audioToText(sourceURL);
+                    String parsedAudio = audioToTextNoAPI(sourceURL);
                     if(parsedAudio == null || parsedAudio.isEmpty()){
                         throw new FailureException("Could not parse audio");
                     }
@@ -134,17 +142,61 @@ public class CaptchaBypasser implements WebElementAction {
         return response.body();
     }
 
-    private String audioToText(String source_url) throws IOException, InterruptedException {
-        IamAuthenticator authenticator = new IamAuthenticator.Builder().apikey(watsonAPIKey).build();
-        SpeechToText speechToText = new SpeechToText(authenticator);
-        speechToText.setServiceUrl(watsonCloudURL);
-        RecognizeOptions options = new RecognizeOptions.Builder()
-                .audio(getAudioInputStream(source_url))
-                .contentType("audio/mp3")
-                .build();
-        ServiceCall<SpeechRecognitionResults> results = speechToText.recognize(options);
-        Response<SpeechRecognitionResults> response = results.execute();
-        String parsedAudio = response.getResult().getResults().get(0).getAlternatives().get(0).getTranscript();
-        return parsedAudio;
+    //Deprecated due to the issues with getting a token from IBM cloud
+    // public String audioToText(String source_url) throws IOException, InterruptedException {
+    //     IamAuthenticator authenticator = new IamAuthenticator.Builder().apikey(watsonAPIKey).build();
+    //     //IamAuthenticator authenticator = new IamAuthenticator(watsonAPIKey);
+    //     SpeechToText speechToText = new SpeechToText(authenticator);
+    //     speechToText.setServiceUrl(watsonCloudURL);
+    //     InputStream inputStream = getAudioInputStream(source_url);
+    //     RecognizeOptions options = new RecognizeOptions.Builder()
+    //             .audio(inputStream)
+    //             .contentType("audio/mp3")
+    //             .build();
+    //     ServiceCall<SpeechRecognitionResults> results = speechToText.recognize(options);
+    //     Response<SpeechRecognitionResults> response = results.execute();
+    //     String parsedAudio = response.getResult().getResults().get(0).getAlternatives().get(0).getTranscript();
+    //     return parsedAudio;
+    // }
+
+    // convert audio to text using IBM Watson service by POST request with InputStream as body
+    // using basic auth by api key
+    public String audioToTextNoAPI(String source_url) throws IOException, InterruptedException {
+        String auth = "apikey" + ":" + watsonAPIKey;
+        byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes(StandardCharsets.ISO_8859_1));
+        String authHeader = "Basic " + new String(encodedAuth);
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(watsonCloudURL + "/v1/recognize"))
+                .header("Content-Type", "audio/mp3")
+                .header("Authorization", authHeader)
+                .POST(HttpRequest.BodyPublishers.ofInputStream(() -> {
+                    try {
+                        return getAudioInputStream(source_url);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                })).build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        String responseBody = response.body();
+        Pattern pattern = Pattern.compile("transcript\": \"(.*)\"");
+        Matcher matcher = pattern.matcher(responseBody);
+        if (matcher.find())
+        {
+            return matcher.group(1);
+        }
+        else {
+            return "";
+        }
+    }
+
+    // wrapper for Thread.sleep() function
+    private void sleep(int timeoutSeconds){
+        try {
+            Thread.sleep(timeoutSeconds * 1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
