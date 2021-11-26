@@ -8,3 +8,4 @@
 */.project
 */.settings/
 .vscode/settings.json
+*/src/main/resources/META-INF/manifest.json
